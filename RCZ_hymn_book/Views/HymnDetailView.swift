@@ -18,14 +18,15 @@ struct HymnDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                headerSection
-                Divider()
-                lyricsSection
+                Text(hymn.lyrics ?? "No lyrics available.")
+                    .font(.body)
+                    .lineSpacing(4)
+                    .multilineTextAlignment(.leading)
             }
             .padding()
         }
         .navigationTitle(hymn.displayTitle)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 favoriteButton
@@ -34,52 +35,6 @@ struct HymnDetailView: View {
     }
     
     // MARK: - View Components
-    
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(hymn.displayTitle)
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.leading)
-            
-            HStack {
-                Label("Key: \(hymn.key)", systemImage: "music.note")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
-                Spacer()
-                
-                if hymn.favorite {
-                    Label("Favorite", systemImage: "star.fill")
-                        .font(.caption)
-                        .foregroundStyle(.yellow)
-                }
-            }
-            
-            if !hymn.type.isEmpty {
-                Text("Type: \(hymn.type)")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-        }
-    }
-    
-    private var lyricsSection: some View {
-        Group {
-            if let lyrics = hymn.lyrics, !lyrics.isEmpty {
-                Text(lyrics)
-                    .font(.body)
-                    .lineSpacing(4)
-                    .multilineTextAlignment(.leading)
-            } else {
-                ContentUnavailableView(
-                    "No Lyrics Available",
-                    systemImage: "music.note.list",
-                    description: Text("The lyrics for this hymn are not available.")
-                )
-            }
-        }
-    }
     
     private var favoriteButton: some View {
         Button(action: toggleFavorite) {

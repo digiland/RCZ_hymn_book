@@ -9,6 +9,44 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var hymnStore = HymnStore()
+
+    var body: some View {
+        TabView {
+            // Main Hymns Tab (showing only "Hymn" type)
+            MainHymnsView(hymnStore: hymnStore)
+                .tabItem {
+                    Image(systemName: "music.note.list")
+                    Text("Hymns")
+                }
+            
+            // Guide Tab
+            HymnTypeView(hymnType: "Guide", hymnStore: hymnStore)
+                .tabItem {
+                    Image(systemName: "book")
+                    Text("Guide")
+                }
+            
+            // Varwi Tab
+            HymnTypeView(hymnType: "Varwi", hymnStore: hymnStore)
+                .tabItem {
+                    Image(systemName: "music.note")
+                    Text("Varwi")
+                }
+            
+            // Chorus Tab
+            HymnTypeView(hymnType: "Chorus", hymnStore: hymnStore)
+                .tabItem {
+                    Image(systemName: "music.mic")
+                    Text("Chorus")
+                }
+        }
+    }
+}
+
+// MARK: - Main Hymns View (for "Hymn" type only)
+
+struct MainHymnsView: View {
+    @ObservedObject var hymnStore: HymnStore
     @State private var searchText = ""
     
     var body: some View {
@@ -16,7 +54,7 @@ struct ContentView: View {
             VStack {
                 SearchBar(text: $searchText, onSearchTextChanged: searchHymns)
                 
-                if hymnStore.isLoading {
+                if hymnStore.isLoading || hymnStore.isFiltering {
                     ProgressView("Loading hymns...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let errorMessage = hymnStore.errorMessage {
@@ -29,8 +67,8 @@ struct ContentView: View {
                     ContentUnavailableView(
                         searchText.isEmpty ? "No Hymns Available" : "No Results Found",
                         systemImage: searchText.isEmpty ? "music.note.list" : "magnifyingglass",
-                        description: Text(searchText.isEmpty ? 
-                                        "The hymn database appears to be empty." : 
+                        description: Text(searchText.isEmpty ?
+                                        "No hymns found in the database." :
                                         "Try searching with different keywords.")
                     )
                 } else {
@@ -44,7 +82,7 @@ struct ContentView: View {
             }
             .navigationTitle("RCZ Hymn Book")
             .onAppear {
-                hymnStore.fetchAllHymns()
+                hymnStore.filterHymns(byType: "Hymn")
             }
         }
     }
@@ -52,73 +90,7 @@ struct ContentView: View {
     // MARK: - Private Methods
     
     private func searchHymns() {
-        if searchText.isEmpty {
-            hymnStore.fetchAllHymns()
-        } else {
-            hymnStore.searchHymns(query: searchText)
-        }
-    }
-}
-
-// MARK: - Supporting Views
-
-struct HymnRow: View {
-    let hymn: Hymn
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(hymn.title)
-                .font(.headline)
-                .lineLimit(2)
-            
-            HStack {
-                Text("Key: \(hymn.key)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                
-                Spacer()
-                
-                if hymn.favorite {
-                    Image(systemName: "star.fill")
-                        .foregroundStyle(.yellow)
-                        .font(.caption)
-                }
-            }
-            
-            if !hymn.type.isEmpty {
-                Text("Type: \(hymn.type)")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-        }
-        .padding(.vertical, 2)
-    }
-}
-
-struct SearchBar: View {
-    @Binding var text: String
-    let onSearchTextChanged: () -> Void
-    
-    var body: some View {
-        HStack {
-            TextField("Search by key, title, or lyrics...", text: $text)
-                .textFieldStyle(.roundedBorder)
-                .onSubmit {
-                    onSearchTextChanged()
-                }
-                .onChange(of: text) {
-                    onSearchTextChanged()
-                }
-            
-            if !text.isEmpty {
-                Button("Clear") {
-                    text = ""
-                    onSearchTextChanged()
-                }
-                .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal)
+        hymnStore.searchAndFilter(query: searchText, type: "Hymn")
     }
 }
 

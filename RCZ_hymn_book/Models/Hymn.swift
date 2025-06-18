@@ -1,5 +1,15 @@
 import Foundation
 
+// MARK: - Helper structs for decoding JSON data
+private struct HymnLyricsData: Decodable {
+    let data: [Verse]
+}
+
+private struct Verse: Decodable {
+    let id: Int
+    let text: String
+}
+
 // MARK: - Hymn Model
 
 struct Hymn: Identifiable, Codable, Hashable {
@@ -12,26 +22,40 @@ struct Hymn: Identifiable, Codable, Hashable {
     
     // MARK: - Computed Properties
     
-    /// Extracts lyrics from the JSON data string
+    /// Extracts and formats lyrics from the JSON data string
     var lyrics: String? {
-        extractLyrics(from: data)
+        guard let jsonData = data.data(using: .utf8) else {
+            return data.formatLyrics() // Fallback for plain string
+        }
+        
+        // Try to decode the JSON
+        if let hymnData = try? JSONDecoder().decode(HymnLyricsData.self, from: jsonData) {
+            return hymnData.data
+                .map { $0.text }
+                .joined(separator: "\n\n")
+                .formatLyrics()
+        }
+        
+        // If decoding fails, assume data is a plain string with lyrics
+        return data.formatLyrics()
     }
     
     /// Returns a formatted display title
     var displayTitle: String {
-        title.trimmingCharacters(in: .whitespacesAndNewlines)
+        "\(key). \(title.strippingHTML())"
+    }
+}
+
+extension String {
+    /// Removes HTML tags from a string.
+    func strippingHTML() -> String {
+        return self.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression, range: nil)
     }
     
-    // MARK: - Private Methods
-    
-    private func extractLyrics(from data: String) -> String? {
-        guard let jsonData = data.data(using: .utf8),
-              let dictionary = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-              let dataArray = dictionary["data"] as? [[String: Any]] else {
-            return data // Fallback to raw data
-        }
-        
-        let verses = dataArray.compactMap { $0["text"] as? String }
-        return verses.joined(separator: "\n\n")
+    /// Replaces <br> tags with newlines and strips other HTML.
+    func formatLyrics() -> String {
+        return self.replacingOccurrences(of: "<br/>", with: "\n")
+                   .replacingOccurrences(of: "<br>", with: "\n")
+                   .strippingHTML()
     }
 }
