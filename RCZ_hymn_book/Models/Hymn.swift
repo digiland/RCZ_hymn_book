@@ -1,5 +1,15 @@
 import Foundation
 
+// MARK: - Helper structs for decoding JSON data
+private struct HymnLyricsData: Decodable {
+    let data: [Verse]
+}
+
+private struct Verse: Decodable {
+    let id: Int
+    let text: String
+}
+
 // MARK: - Hymn Model
 
 struct Hymn: Identifiable, Codable, Hashable {
@@ -12,26 +22,54 @@ struct Hymn: Identifiable, Codable, Hashable {
     
     // MARK: - Computed Properties
     
-    /// Extracts lyrics from the JSON data string
+    /// Extracts and formats lyrics from the JSON data string
     var lyrics: String? {
-        extractLyrics(from: data)
+        guard let jsonData = data.data(using: .utf8) else {
+            return data.formatLyrics() // Fallback for plain string
+        }
+        
+        // Try to decode the JSON
+        if let hymnData = try? JSONDecoder().decode(HymnLyricsData.self, from: jsonData) {
+            // Format each stanza individually, then join them with paragraph breaks.
+            return hymnData.data
+                .map { $0.text.formatLyrics() }
+                .joined(separator: "\n\n")
+        }
+        
+        // If decoding fails, assume data is a plain string with lyrics
+        return data.formatLyrics()
     }
     
     /// Returns a formatted display title
     var displayTitle: String {
-        title.trimmingCharacters(in: .whitespacesAndNewlines)
+        "\(key). \(title.strippingHTML())"
     }
     
-    // MARK: - Private Methods
+    var titleWithMarkdown: String {
+        title.replacingOccurrences(of: "<b>", with: "**")
+             .replacingOccurrences(of: "</b>", with: "**")
+             .replacingOccurrences(of: "<i>", with: "*")
+             .replacingOccurrences(of: "</i>", with: "*")
+    }
+}
+
+extension String {
+    /// Removes HTML tags from a string.
+    func strippingHTML() -> String {
+        return self.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression, range: nil)
+    }
     
-    private func extractLyrics(from data: String) -> String? {
-        guard let jsonData = data.data(using: .utf8),
-              let dictionary = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-              let dataArray = dictionary["data"] as? [[String: Any]] else {
-            return data // Fallback to raw data
-        }
+    /// Converts HTML line breaks to actual line breaks and removes HTML tags
+    func formatLyrics() -> String {
+        var formattedText = self
         
-        let verses = dataArray.compactMap { $0["text"] as? String }
-        return verses.joined(separator: "\n\n")
+        // Convert HTML line breaks to actual line breaks
+        formattedText = formattedText.replacingOccurrences(of: "<br/>", with: "\n")
+        formattedText = formattedText.replacingOccurrences(of: "<br>", with: "\n")
+        
+        // Remove all HTML tags completely
+        formattedText = formattedText.strippingHTML()
+        
+        return formattedText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
