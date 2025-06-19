@@ -179,3 +179,5 @@ struct SettingsView: View {
 #Preview {
     SettingsView(userSettings: UserSettings(), showDoneButton: true)
 }
+
+// HIG: Settings use system Form, Section, and Picker for consistency and accessibility.

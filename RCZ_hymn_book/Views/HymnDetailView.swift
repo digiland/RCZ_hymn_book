@@ -8,6 +8,8 @@ struct HymnDetailView: View {
     let hymn: Hymn
     @State private var isFavorite: Bool
     @State private var showingSettings = false
+    @State private var showingShareSheet = false
+    @State private var showingCopyAlert = false
     
     // MARK: - Initialization
     
@@ -43,6 +45,9 @@ struct HymnDetailView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled) // Enable text selection for copying
                             .accessibilityLabel("Hymn lyrics")
+                            .onLongPressGesture {
+                                copyHymnToClipboard()
+                            }
                     } else {
                         ContentUnavailableView(
                             "No Lyrics Available",
@@ -62,11 +67,33 @@ struct HymnDetailView: View {
             }
             
             ToolbarItem(placement: .navigationBarTrailing) {
-                favoriteButton
+                HStack {
+                    shareButton
+                    favoriteButton
+                }
             }
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView(userSettings: userSettings, showDoneButton: true)
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            NavigationView {
+                SharingView(hymn: hymn, userSettings: userSettings)
+                    .navigationTitle("Share Hymn")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") {
+                                showingShareSheet = false
+                            }
+                        }
+                    }
+            }
+        }
+        .alert("Copied to Clipboard", isPresented: $showingCopyAlert) {
+            Button("OK") { }
+        } message: {
+            Text("Hymn text has been copied to clipboard")
         }
         .toolbarBackground(userSettings.backgroundTheme.backgroundColor, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -90,6 +117,14 @@ struct HymnDetailView: View {
         .accessibilityLabel(isFavorite ? "Remove from favorites" : "Add to favorites")
     }
     
+    private var shareButton: some View {
+        Button(action: { showingShareSheet = true }) {
+            Image(systemName: "square.and.arrow.up")
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityLabel("Share hymn")
+    }
+    
     // MARK: - Actions
     
     private func toggleFavorite() {
@@ -100,6 +135,18 @@ struct HymnDetailView: View {
         }
     }
     
+    private func copyHymnToClipboard() {
+        var shareText = hymn.displayTitle + "\n\n"
+        if let lyrics = hymn.lyrics {
+            shareText += lyrics
+        }
+        shareText += "\n\nShared from RCZ Hymn Book"
+        
+        UIPasteboard.general.string = shareText
+        showingCopyAlert = true
+        hapticFeedback()
+    }
+    
     // MARK: - Haptic Feedback Helper
     
     private func hapticFeedback() {
@@ -107,6 +154,8 @@ struct HymnDetailView: View {
         impact.impactOccurred()
     }
 }
+
+// HIG: Detail view uses system navigation, dynamic type, and accessibility labels for all controls.
 
 // MARK: - Preview
 

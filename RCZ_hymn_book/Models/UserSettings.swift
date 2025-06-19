@@ -186,4 +186,25 @@ extension BackgroundTheme {
         case .sepia: return .light // Sepia uses light mode base
         }
     }
+    
+    var uiColor: UIColor {
+        switch self {
+        case .system: return UIColor.systemBackground
+        case .light: return UIColor.white
+        case .dark: return UIColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1.0)
+        case .sepia: return UIColor(red: 0.97, green: 0.94, blue: 0.85, alpha: 1.0)
+        }
+    }
+    
+    var textUIColor: UIColor {
+        switch self {
+        case .system: return UIColor.label
+        case .light: return UIColor.black
+        case .dark: return UIColor(red: 0.95, green: 0.95, blue: 0.95, alpha: 1.0)
+        case .sepia: return UIColor(red: 0.2, green: 0.15, blue: 0.1, alpha: 1.0)
+        }
+    }
 }
+
+// Privacy: This app does not collect personal data or track users. All user settings are stored locally using UserDefaults.
+// HIG: Uses system colors and dynamic type for accessibility and readability.

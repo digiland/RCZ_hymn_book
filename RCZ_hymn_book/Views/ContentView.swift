@@ -65,6 +65,8 @@ struct MainHymnsView: View {
     @ObservedObject var hymnStore: HymnStore
     @ObservedObject var userSettings: UserSettings
     @State private var searchText = ""
+    @State private var showingCopyAlert = false
+    @State private var copyAlertMessage = ""
     
     var body: some View {
         NavigationStack {
@@ -93,9 +95,29 @@ struct MainHymnsView: View {
                         NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn, userSettings: userSettings)) {
                             HymnRow(hymn: hymn)
                         }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button {
+                                copyHymnToClipboard(hymn)
+                            } label: {
+                                Image(systemName: "doc.on.clipboard")
+                            }
+                            .tint(.blue)
+                            
+                            Button {
+                                hymnStore.setFavorite(!hymn.favorite, for: hymn)
+                            } label: {
+                                Image(systemName: hymn.favorite ? "star.slash" : "star")
+                            }
+                            .tint(hymn.favorite ? .gray : .yellow)
+                        }
                     }
                     .listStyle(.plain)
                 }
+            }
+            .alert("Copied to Clipboard", isPresented: $showingCopyAlert) {
+                Button("OK") { }
+            } message: {
+                Text(copyAlertMessage)
             }
             .navigationTitle("RCZ Hymn Book")
             .onAppear {
@@ -105,6 +127,21 @@ struct MainHymnsView: View {
     }
     
     // MARK: - Private Methods
+    
+    private func copyHymnToClipboard(_ hymn: Hymn) {
+        var shareText = hymn.displayTitle + "\n\n"
+        if let lyrics = hymn.lyrics {
+            shareText += lyrics
+        }
+        shareText += "\n\nShared from RCZ Hymn Book"
+        
+        UIPasteboard.general.string = shareText
+        copyAlertMessage = "Hymn text copied to clipboard"
+        showingCopyAlert = true
+        
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
+    }
     
     private func searchHymns() {
         hymnStore.searchAndFilter(query: searchText, type: "Hymn")
@@ -117,6 +154,9 @@ struct FavoritesView: View {
     @ObservedObject var hymnStore: HymnStore
     @ObservedObject var userSettings: UserSettings
     @State private var searchText = ""
+    @State private var showingShareSheet = false
+    @State private var showingCopyAlert = false
+    @State private var copyAlertMessage = ""
     
     var body: some View {
         NavigationStack {
@@ -145,15 +185,78 @@ struct FavoritesView: View {
                         NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn, userSettings: userSettings)) {
                             HymnRow(hymn: hymn)
                         }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button {
+                                copyHymnToClipboardInFavorites(hymn)
+                            } label: {
+                                Image(systemName: "doc.on.clipboard")
+                            }
+                            .tint(.blue)
+                            
+                            Button {
+                                hymnStore.setFavorite(false, for: hymn)
+                            } label: {
+                                Image(systemName: "star.slash")
+                            }
+                            .tint(.gray)
+                        }
                     }
                     .listStyle(.plain)
                 }
             }
+            .alert("Copied to Clipboard", isPresented: $showingCopyAlert) {
+                Button("OK") { }
+            } message: {
+                Text(copyAlertMessage)
+            }
             .navigationTitle("Favorites")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if !hymnStore.hymns.isEmpty {
+                        Button(action: { showingShareSheet = true }) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .accessibilityLabel("Share favorites")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                NavigationView {
+                    CollectionSharingView(
+                        hymns: hymnStore.hymns,
+                        collectionName: "My Favorite Hymns",
+                        userSettings: userSettings
+                    )
+                    .navigationTitle("Share Favorites")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") {
+                                showingShareSheet = false
+                            }
+                        }
+                    }
+                }
+            }
             .onAppear {
                 hymnStore.filterFavoriteHymns()
             }
         }
+    }
+    
+    private func copyHymnToClipboardInFavorites(_ hymn: Hymn) {
+        var shareText = hymn.displayTitle + "\n\n"
+        if let lyrics = hymn.lyrics {
+            shareText += lyrics
+        }
+        shareText += "\n\nShared from RCZ Hymn Book"
+        
+        UIPasteboard.general.string = shareText
+        copyAlertMessage = "Hymn text copied to clipboard"
+        showingCopyAlert = true
+        
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
     }
     
     private func searchFavorites() {
@@ -168,6 +271,9 @@ struct FavoritesView: View {
         }
     }
 }
+
+// HIG: All navigation uses system NavigationStack and TabView for consistency.
+// Accessibility: All main views use system controls and provide feedback for errors and empty states.
 
 #Preview {
     ContentView()

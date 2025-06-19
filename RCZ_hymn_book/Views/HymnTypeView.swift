@@ -12,6 +12,9 @@ struct HymnTypeView: View {
     @ObservedObject var hymnStore: HymnStore
     @ObservedObject var userSettings: UserSettings
     @State private var searchText = ""
+    @State private var showingShareSheet = false
+    @State private var showingCopyAlert = false
+    @State private var copyAlertMessage = ""
     
     var body: some View {
         NavigationStack {
@@ -40,12 +43,60 @@ struct HymnTypeView: View {
                         NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn, userSettings: userSettings)) {
                             HymnRow(hymn: hymn)
                         }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button {
+                                copyHymnToClipboard(hymn)
+                            } label: {
+                                Image(systemName: "doc.on.clipboard")
+                            }
+                            .tint(.blue)
+                            
+                            Button {
+                                hymnStore.setFavorite(!hymn.favorite, for: hymn)
+                            } label: {
+                                Image(systemName: hymn.favorite ? "star.slash" : "star")
+                            }
+                            .tint(hymn.favorite ? .gray : .yellow)
+                        }
                     }
                     .listStyle(.plain)
                 }
             }
+            .alert("Copied to Clipboard", isPresented: $showingCopyAlert) {
+                Button("OK") { }
+            } message: {
+                Text(copyAlertMessage)
+            }
             .navigationTitle(hymnType)
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if !hymnStore.hymns.isEmpty {
+                        Button(action: { showingShareSheet = true }) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .accessibilityLabel("Share \(hymnType.lowercased())s")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                NavigationView {
+                    CollectionSharingView(
+                        hymns: hymnStore.hymns,
+                        collectionName: "\(hymnType) Collection",
+                        userSettings: userSettings
+                    )
+                    .navigationTitle("Share \(hymnType)s")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") {
+                                showingShareSheet = false
+                            }
+                        }
+                    }
+                }
+            }
             .onAppear {
                 hymnStore.filterHymns(byType: hymnType)
             }
@@ -54,10 +105,27 @@ struct HymnTypeView: View {
     
     // MARK: - Private Methods
     
+    private func copyHymnToClipboard(_ hymn: Hymn) {
+        var shareText = hymn.displayTitle + "\n\n"
+        if let lyrics = hymn.lyrics {
+            shareText += lyrics
+        }
+        shareText += "\n\nShared from RCZ Hymn Book"
+        
+        UIPasteboard.general.string = shareText
+        copyAlertMessage = "Hymn text copied to clipboard"
+        showingCopyAlert = true
+        
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
+    }
+    
     private func searchHymns() {
         hymnStore.searchAndFilter(query: searchText, type: hymnType)
     }
 }
+
+// HIG: Uses system navigation, error feedback, and accessibility labels for all controls.
 
 #Preview {
     HymnTypeView(hymnType: "Guide", hymnStore: HymnStore(), userSettings: UserSettings())

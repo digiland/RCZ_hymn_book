@@ -16,15 +16,19 @@ struct HymnRow: View {
         HStack {
             Text("\(hymn.key). \(hymn.title)")
                 .font(.headline)
+                .accessibilityLabel("Hymn \(hymn.key): \(hymn.title)")
+                .accessibilityHint(hymn.favorite ? "Favorited" : "Not favorited")
             
             Spacer()
             
             if hymn.favorite {
                 Image(systemName: "star.fill")
                     .foregroundStyle(.yellow)
+                    .accessibilityLabel("Favorite")
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -42,6 +46,8 @@ struct SearchBar: View {
                 .onChange(of: text) {
                     onSearchTextChanged()
                 }
+                .accessibilityLabel("Search hymns")
+                .accessibilityHint("Enter keywords to search hymns by key, title, or lyrics")
             
             if !text.isEmpty {
                 Button("Clear") {
@@ -49,8 +55,55 @@ struct SearchBar: View {
                     onSearchTextChanged()
                 }
                 .foregroundStyle(.secondary)
+                .accessibilityLabel("Clear search text")
             }
         }
         .padding(.horizontal)
+    }
+}
+
+// MARK: - Enhanced Hymn Row with Swipe Actions
+
+struct EnhancedHymnRow: View {
+    let hymn: Hymn
+    let hymnStore: HymnStore
+    @State private var showingCopyAlert = false
+    
+    var body: some View {
+        HymnRow(hymn: hymn)
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button {
+                    copyHymnToClipboard()
+                } label: {
+                    Image(systemName: "doc.on.clipboard")
+                }
+                .tint(.blue)
+                
+                Button {
+                    hymnStore.setFavorite(!hymn.favorite, for: hymn)
+                } label: {
+                    Image(systemName: hymn.favorite ? "star.slash" : "star")
+                }
+                .tint(hymn.favorite ? .gray : .yellow)
+            }
+            .alert("Copied to Clipboard", isPresented: $showingCopyAlert) {
+                Button("OK") { }
+            } message: {
+                Text("Hymn text has been copied to clipboard")
+            }
+    }
+    
+    private func copyHymnToClipboard() {
+        var shareText = hymn.displayTitle + "\n\n"
+        if let lyrics = hymn.lyrics {
+            shareText += lyrics
+        }
+        shareText += "\n\nShared from RCZ Hymn Book"
+        
+        UIPasteboard.general.string = shareText
+        showingCopyAlert = true
+        
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
     }
 }
