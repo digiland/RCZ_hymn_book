@@ -9,44 +9,53 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var hymnStore = HymnStore()
+    @StateObject private var userSettings = UserSettings()
 
     var body: some View {
         TabView {
             // Main Hymns Tab (showing only "Hymn" type)
-            MainHymnsView(hymnStore: hymnStore)
+            MainHymnsView(hymnStore: hymnStore, userSettings: userSettings)
                 .tabItem {
                     Image(systemName: "music.note.list")
                     Text("Hymns")
                 }
             
             // Guide Tab
-            HymnTypeView(hymnType: "Guide", hymnStore: hymnStore)
+            HymnTypeView(hymnType: "Guide", hymnStore: hymnStore, userSettings: userSettings)
                 .tabItem {
                     Image(systemName: "book")
                     Text("Guide")
                 }
             
             // Varwi Tab
-            HymnTypeView(hymnType: "Varwi", hymnStore: hymnStore)
+            HymnTypeView(hymnType: "Varwi", hymnStore: hymnStore, userSettings: userSettings)
                 .tabItem {
                     Image(systemName: "music.note")
                     Text("Varwi")
                 }
             
             // Chorus Tab
-            HymnTypeView(hymnType: "Chorus", hymnStore: hymnStore)
+            HymnTypeView(hymnType: "Chorus", hymnStore: hymnStore, userSettings: userSettings)
                 .tabItem {
                     Image(systemName: "music.mic")
                     Text("Chorus")
                 }
             
             // Favorites Tab
-            FavoritesView(hymnStore: hymnStore)
+            FavoritesView(hymnStore: hymnStore, userSettings: userSettings)
                 .tabItem {
                     Image(systemName: "star.fill")
                     Text("Favorites")
                 }
+            
+            // Settings Tab
+            SettingsView(userSettings: userSettings)
+                .tabItem {
+                    Image(systemName: "gearshape.fill")
+                    Text("Settings")
+                }
         }
+        .applyTheme(userSettings)
     }
 }
 
@@ -54,6 +63,7 @@ struct ContentView: View {
 
 struct MainHymnsView: View {
     @ObservedObject var hymnStore: HymnStore
+    @ObservedObject var userSettings: UserSettings
     @State private var searchText = ""
     
     var body: some View {
@@ -80,7 +90,7 @@ struct MainHymnsView: View {
                     )
                 } else {
                     List(hymnStore.hymns) { hymn in
-                        NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn)) {
+                        NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn, userSettings: userSettings)) {
                             HymnRow(hymn: hymn)
                         }
                     }
@@ -105,6 +115,7 @@ struct MainHymnsView: View {
 
 struct FavoritesView: View {
     @ObservedObject var hymnStore: HymnStore
+    @ObservedObject var userSettings: UserSettings
     @State private var searchText = ""
     
     var body: some View {
@@ -131,7 +142,7 @@ struct FavoritesView: View {
                     )
                 } else {
                     List(hymnStore.hymns) { hymn in
-                        NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn)) {
+                        NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn, userSettings: userSettings)) {
                             HymnRow(hymn: hymn)
                         }
                     }
