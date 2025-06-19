@@ -39,6 +39,13 @@ struct ContentView: View {
                     Image(systemName: "music.mic")
                     Text("Chorus")
                 }
+            
+            // Favorites Tab
+            FavoritesView(hymnStore: hymnStore)
+                .tabItem {
+                    Image(systemName: "star.fill")
+                    Text("Favorites")
+                }
         }
     }
 }
@@ -73,7 +80,7 @@ struct MainHymnsView: View {
                     )
                 } else {
                     List(hymnStore.hymns) { hymn in
-                        NavigationLink(destination: HymnDetailView(hymn: hymn)) {
+                        NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn)) {
                             HymnRow(hymn: hymn)
                         }
                     }
@@ -91,6 +98,63 @@ struct MainHymnsView: View {
     
     private func searchHymns() {
         hymnStore.searchAndFilter(query: searchText, type: "Hymn")
+    }
+}
+
+// MARK: - Favorites View
+
+struct FavoritesView: View {
+    @ObservedObject var hymnStore: HymnStore
+    @State private var searchText = ""
+    
+    var body: some View {
+        NavigationStack {
+            VStack {
+                SearchBar(text: $searchText, onSearchTextChanged: searchFavorites)
+                
+                if hymnStore.isLoading || hymnStore.isFiltering {
+                    ProgressView("Loading favorites...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let errorMessage = hymnStore.errorMessage {
+                    ContentUnavailableView(
+                        "Error Loading Favorites",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text(errorMessage)
+                    )
+                } else if hymnStore.hymns.isEmpty {
+                    ContentUnavailableView(
+                        searchText.isEmpty ? "No Favorites" : "No Results Found",
+                        systemImage: searchText.isEmpty ? "star.fill" : "magnifyingglass",
+                        description: Text(searchText.isEmpty ?
+                                        "You have not favorited any hymns yet." :
+                                        "Try searching with different keywords.")
+                    )
+                } else {
+                    List(hymnStore.hymns) { hymn in
+                        NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn)) {
+                            HymnRow(hymn: hymn)
+                        }
+                    }
+                    .listStyle(.plain)
+                }
+            }
+            .navigationTitle("Favorites")
+            .onAppear {
+                hymnStore.filterFavoriteHymns()
+            }
+        }
+    }
+    
+    private func searchFavorites() {
+        if searchText.isEmpty {
+            hymnStore.filterFavoriteHymns()
+        } else {
+            hymnStore.hymns = hymnStore.allHymnsPublic.filter { $0.favorite &&
+                ($0.key.localizedCaseInsensitiveContains(searchText) ||
+                 $0.title.localizedCaseInsensitiveContains(searchText) ||
+                 $0.data.localizedCaseInsensitiveContains(searchText))
+            }
+        }
     }
 }
 

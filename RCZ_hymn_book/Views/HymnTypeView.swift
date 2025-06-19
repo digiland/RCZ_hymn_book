@@ -36,7 +36,7 @@ struct HymnTypeView: View {
                     )
                 } else {
                     List(hymnStore.hymns) { hymn in
-                        NavigationLink(destination: HymnDetailView(hymn: hymn)) {
+                        NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn)) {
                             HymnRow(hymn: hymn)
                         }
                     }
