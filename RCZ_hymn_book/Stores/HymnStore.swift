@@ -70,7 +70,8 @@ final class HymnStore: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        Task.detached(priority: .userInitiated) {
+        Task { [weak self] in
+            guard let self = self else { return }
             let query = "SELECT _id, type, key, title, data, favorite FROM data ORDER BY key ASC"
             
             var statement: OpaquePointer?
@@ -88,17 +89,13 @@ final class HymnStore: ObservableObject {
                 }
             } else {
                 let error = String(cString: sqlite3_errmsg(database))
-                await MainActor.run {
-                    self.errorMessage = "Failed to prepare SQL statement: \(error)"
-                }
+                self.errorMessage = "Failed to prepare SQL statement: \(error)"
             }
             
-            await MainActor.run {
-                self.allHymns = loadedHymns
-                self.hymns = loadedHymns // Initially, show all hymns
-                self.isLoading = false
-                self.hasLoadedData = true
-            }
+            self.allHymns = loadedHymns
+            self.hymns = loadedHymns // Initially, show all hymns
+            self.isLoading = false
+            self.hasLoadedData = true
         }
     }
     

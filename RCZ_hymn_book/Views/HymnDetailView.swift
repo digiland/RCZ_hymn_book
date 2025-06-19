@@ -29,9 +29,11 @@ struct HymnDetailView: View {
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
-                    Text("No lyrics available.")
-                        .font(.body)
-                        .foregroundColor(.secondary)
+                    ContentUnavailableView(
+                        "No Lyrics Available",
+                        systemImage: "music.note",
+                        description: Text("Lyrics for this hymn are not available.")
+                    )
                 }
             }
             .padding()
