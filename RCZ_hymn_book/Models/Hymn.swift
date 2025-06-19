@@ -30,10 +30,10 @@ struct Hymn: Identifiable, Codable, Hashable {
         
         // Try to decode the JSON
         if let hymnData = try? JSONDecoder().decode(HymnLyricsData.self, from: jsonData) {
+            // Format each stanza individually, then join them with paragraph breaks.
             return hymnData.data
-                .map { $0.text }
+                .map { $0.text.formatLyrics() }
                 .joined(separator: "\n\n")
-                .formatLyrics()
         }
         
         // If decoding fails, assume data is a plain string with lyrics
@@ -44,6 +44,13 @@ struct Hymn: Identifiable, Codable, Hashable {
     var displayTitle: String {
         "\(key). \(title.strippingHTML())"
     }
+    
+    var titleWithMarkdown: String {
+        title.replacingOccurrences(of: "<b>", with: "**")
+             .replacingOccurrences(of: "</b>", with: "**")
+             .replacingOccurrences(of: "<i>", with: "*")
+             .replacingOccurrences(of: "</i>", with: "*")
+    }
 }
 
 extension String {
@@ -52,10 +59,17 @@ extension String {
         return self.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression, range: nil)
     }
     
-    /// Replaces <br> tags with newlines and strips other HTML.
+    /// Converts HTML line breaks to actual line breaks and removes HTML tags
     func formatLyrics() -> String {
-        return self.replacingOccurrences(of: "<br/>", with: "\n")
-                   .replacingOccurrences(of: "<br>", with: "\n")
-                   .strippingHTML()
+        var formattedText = self
+        
+        // Convert HTML line breaks to actual line breaks
+        formattedText = formattedText.replacingOccurrences(of: "<br/>", with: "\n")
+        formattedText = formattedText.replacingOccurrences(of: "<br>", with: "\n")
+        
+        // Remove all HTML tags completely
+        formattedText = formattedText.strippingHTML()
+        
+        return formattedText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

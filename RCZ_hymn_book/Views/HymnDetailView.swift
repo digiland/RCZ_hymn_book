@@ -18,10 +18,21 @@ struct HymnDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text(hymn.lyrics ?? "No lyrics available.")
-                    .font(.body)
-                    .lineSpacing(4)
+                Text(hymn.title.strippingHTML())
+                    .font(.title)
                     .multilineTextAlignment(.leading)
+                
+                if let lyricsText = hymn.lyrics {
+                    Text(lyricsText)
+                        .font(.body)
+                        .lineSpacing(6)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text("No lyrics available.")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
             }
             .padding()
         }
