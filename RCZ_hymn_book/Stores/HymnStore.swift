@@ -62,6 +62,51 @@ final class HymnStore: ObservableObject {
         }
     }
     
+    func filterFavoriteHymns() {
+        isFiltering = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.hymns = self.allHymns.filter { $0.favorite }
+            self.isFiltering = false
+        }
+    }
+    
+    // MARK: - Update Favorite
+    func setFavorite(_ isFavorite: Bool, for hymn: Hymn) {
+        guard let database = database else { return }
+        let updateQuery = "UPDATE data SET favorite = ? WHERE _id = ?"
+        var statement: OpaquePointer?
+        if sqlite3_prepare_v2(database, updateQuery, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, isFavorite ? 1 : 0)
+            sqlite3_bind_int(statement, 2, Int32(hymn.id))
+            if sqlite3_step(statement) == SQLITE_DONE {
+                // Update in-memory model
+                if let idx = allHymns.firstIndex(where: { $0.id == hymn.id }) {
+                    allHymns[idx] = Hymn(
+                        id: hymn.id,
+                        type: hymn.type,
+                        key: hymn.key,
+                        title: hymn.title,
+                        data: hymn.data,
+                        favorite: isFavorite
+                    )
+                }
+                // Update published hymns list if needed
+                if let idx = hymns.firstIndex(where: { $0.id == hymn.id }) {
+                    hymns[idx] = Hymn(
+                        id: hymn.id,
+                        type: hymn.type,
+                        key: hymn.key,
+                        title: hymn.title,
+                        data: hymn.data,
+                        favorite: isFavorite
+                    )
+                }
+                objectWillChange.send()
+            }
+            sqlite3_finalize(statement)
+        }
+    }
+    
     // MARK: - Private Methods
     
     private func loadAllHymnsIfNeeded() {
@@ -136,4 +181,7 @@ final class HymnStore: ObservableObject {
             favorite: favorite
         )
     }
+    
+    // Expose allHymns as read-only for search in FavoritesView
+    var allHymnsPublic: [Hymn] { allHymns }
 }

@@ -3,12 +3,14 @@ import SwiftUI
 // MARK: - HymnDetailView
 
 struct HymnDetailView: View {
+    @ObservedObject var hymnStore: HymnStore
     let hymn: Hymn
     @State private var isFavorite: Bool
     
     // MARK: - Initialization
     
-    init(hymn: Hymn) {
+    init(hymnStore: HymnStore, hymn: Hymn) {
+        self.hymnStore = hymnStore
         self.hymn = hymn
         self._isFavorite = State(initialValue: hymn.favorite)
     }
@@ -62,8 +64,8 @@ struct HymnDetailView: View {
     private func toggleFavorite() {
         withAnimation(.easeInOut(duration: 0.2)) {
             isFavorite.toggle()
+            hymnStore.setFavorite(isFavorite, for: hymn)
         }
-        // TODO: Implement favorite persistence in HymnStore
     }
 }
 
@@ -72,6 +74,7 @@ struct HymnDetailView: View {
 #Preview {
     NavigationStack {
         HymnDetailView(
+            hymnStore: HymnStore(),
             hymn: Hymn(
                 id: 1,
                 type: "Hymn",
