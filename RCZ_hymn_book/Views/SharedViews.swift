@@ -54,3 +54,49 @@ struct SearchBar: View {
         .padding(.horizontal)
     }
 }
+
+// MARK: - Enhanced Hymn Row with Swipe Actions
+
+struct EnhancedHymnRow: View {
+    let hymn: Hymn
+    let hymnStore: HymnStore
+    @State private var showingCopyAlert = false
+    
+    var body: some View {
+        HymnRow(hymn: hymn)
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button {
+                    copyHymnToClipboard()
+                } label: {
+                    Image(systemName: "doc.on.clipboard")
+                }
+                .tint(.blue)
+                
+                Button {
+                    hymnStore.setFavorite(!hymn.favorite, for: hymn)
+                } label: {
+                    Image(systemName: hymn.favorite ? "star.slash" : "star")
+                }
+                .tint(hymn.favorite ? .gray : .yellow)
+            }
+            .alert("Copied to Clipboard", isPresented: $showingCopyAlert) {
+                Button("OK") { }
+            } message: {
+                Text("Hymn text has been copied to clipboard")
+            }
+    }
+    
+    private func copyHymnToClipboard() {
+        var shareText = hymn.displayTitle + "\n\n"
+        if let lyrics = hymn.lyrics {
+            shareText += lyrics
+        }
+        shareText += "\n\nShared from RCZ Hymn Book"
+        
+        UIPasteboard.general.string = shareText
+        showingCopyAlert = true
+        
+        let impact = UIImpactFeedbackGenerator(style: .light)
+        impact.impactOccurred()
+    }
+}
