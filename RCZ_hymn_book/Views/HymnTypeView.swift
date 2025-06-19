@@ -10,6 +10,7 @@ import SwiftUI
 struct HymnTypeView: View {
     let hymnType: String
     @ObservedObject var hymnStore: HymnStore
+    @ObservedObject var userSettings: UserSettings
     @State private var searchText = ""
     
     var body: some View {
@@ -36,7 +37,7 @@ struct HymnTypeView: View {
                     )
                 } else {
                     List(hymnStore.hymns) { hymn in
-                        NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn)) {
+                        NavigationLink(destination: HymnDetailView(hymnStore: hymnStore, hymn: hymn, userSettings: userSettings)) {
                             HymnRow(hymn: hymn)
                         }
                     }
@@ -59,5 +60,5 @@ struct HymnTypeView: View {
 }
 
 #Preview {
-    HymnTypeView(hymnType: "Guide", hymnStore: HymnStore())
+    HymnTypeView(hymnType: "Guide", hymnStore: HymnStore(), userSettings: UserSettings())
 }
