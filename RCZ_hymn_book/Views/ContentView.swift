@@ -272,6 +272,9 @@ struct FavoritesView: View {
     }
 }
 
+// HIG: All navigation uses system NavigationStack and TabView for consistency.
+// Accessibility: All main views use system controls and provide feedback for errors and empty states.
+
 #Preview {
     ContentView()
 }

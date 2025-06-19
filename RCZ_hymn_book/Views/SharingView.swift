@@ -216,17 +216,21 @@ struct ShareButton: View {
                 Image(systemName: icon)
                     .font(.title2)
                     .foregroundStyle(.primary)
+                    .accessibilityHidden(true) // Icon is decorative
                 
                 Text(title)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary) // Use primary for better contrast
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .background(Color(.systemGray6))
+            .background(Color(.systemGray6)) // Consider Color(.systemBackground) for best HIG compliance
             .cornerRadius(12)
         }
+        .accessibilityLabel(Text(title))
+        .accessibilityHint("Tap to " + title.lowercased())
         .buttonStyle(.plain)
+        .accessibilityAddTraits(.isButton)
     }
 }
 

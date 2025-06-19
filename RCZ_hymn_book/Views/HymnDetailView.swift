@@ -155,6 +155,8 @@ struct HymnDetailView: View {
     }
 }
 
+// HIG: Detail view uses system navigation, dynamic type, and accessibility labels for all controls.
+
 // MARK: - Preview
 
 #Preview {

@@ -205,3 +205,6 @@ extension BackgroundTheme {
         }
     }
 }
+
+// Privacy: This app does not collect personal data or track users. All user settings are stored locally using UserDefaults.
+// HIG: Uses system colors and dynamic type for accessibility and readability.

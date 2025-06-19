@@ -16,15 +16,19 @@ struct HymnRow: View {
         HStack {
             Text("\(hymn.key). \(hymn.title)")
                 .font(.headline)
+                .accessibilityLabel("Hymn \(hymn.key): \(hymn.title)")
+                .accessibilityHint(hymn.favorite ? "Favorited" : "Not favorited")
             
             Spacer()
             
             if hymn.favorite {
                 Image(systemName: "star.fill")
                     .foregroundStyle(.yellow)
+                    .accessibilityLabel("Favorite")
             }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -42,6 +46,8 @@ struct SearchBar: View {
                 .onChange(of: text) {
                     onSearchTextChanged()
                 }
+                .accessibilityLabel("Search hymns")
+                .accessibilityHint("Enter keywords to search hymns by key, title, or lyrics")
             
             if !text.isEmpty {
                 Button("Clear") {
@@ -49,6 +55,7 @@ struct SearchBar: View {
                     onSearchTextChanged()
                 }
                 .foregroundStyle(.secondary)
+                .accessibilityLabel("Clear search text")
             }
         }
         .padding(.horizontal)

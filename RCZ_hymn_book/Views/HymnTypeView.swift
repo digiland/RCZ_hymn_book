@@ -125,6 +125,8 @@ struct HymnTypeView: View {
     }
 }
 
+// HIG: Uses system navigation, error feedback, and accessibility labels for all controls.
+
 #Preview {
     HymnTypeView(hymnType: "Guide", hymnStore: HymnStore(), userSettings: UserSettings())
 }
